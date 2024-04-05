@@ -1,0 +1,27 @@
+body{
+  text-align: center;
+}
+
+body .ul{
+ margin-left: 20%;
+}
+
+.allTasks{
+  background-color: rgb(0, 60, 255);
+  color: aqua;
+
+}
+
+
+.allDeleteComplete{
+  background-color: rgb(255, 0, 179);
+}
+.ul{
+  background-color: blueviolet;
+  width: 50%;
+  margin-top: 15px;
+}
+.addButton{
+  background-color: rgb(189, 68, 13);
+}
+
