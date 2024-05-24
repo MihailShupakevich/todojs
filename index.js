@@ -22,7 +22,6 @@ const globalCheckbox = document.getElementById('globalCheckbox');
 const allDeleteComplete = document.getElementById('allDeleteComplete');
 const allButtons = document.getElementById('allButtons');
 const pgContainer = document.getElementById('pageContainer');
-// eslint-disable-next-line no-redeclare
 const URL = 'http://localhost:3000/Todo';
 let curPage = 1;
 let filterType = 'allTasks';
