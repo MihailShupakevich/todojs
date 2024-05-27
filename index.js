@@ -22,8 +22,7 @@ const globalCheckbox = document.getElementById('globalCheckbox');
 const allDeleteComplete = document.getElementById('allDeleteComplete');
 const allButtons = document.getElementById('allButtons');
 const pgContainer = document.getElementById('pageContainer');
-// eslint-disable-next-line no-redeclare
-const URL = 'http://localhost:3001/todos';
+const URL_BACK = 'http://localhost:3001/todos';
 let curPage = 1;
 let filterType = 'allTasks';
 let arrayTask = [];
@@ -66,6 +65,28 @@ const createPageButtons = (tasksLength) => {
 
 const deleteSpace = () => mainInput.value.replace(/\s+/g, ' ').trim();
 
+const buttonRefresh = () => {
+  allButtons.children[0].setAttribute('class', PRIMARY_STYLE);
+  allButtons.children[1].setAttribute('class', PRIMARY_STYLE);
+  allButtons.children[2].setAttribute('class', PRIMARY_STYLE);
+  if (filterType === 'allTasks') {
+    allButtons.children[0].setAttribute('class', DANGER_STYLE);
+  }
+  if (filterType === 'activeTasks') {
+    allButtons.children[1].setAttribute('class', DANGER_STYLE);
+  }
+  if (filterType === 'completedTasks') {
+    allButtons.children[2].setAttribute('class', DANGER_STYLE);
+  }
+};
+
+const styleButtonRender = () => {
+  buttonRefresh();
+  allButtons.children[0].textContent = 'Все задачи';
+  allButtons.children[2].textContent = 'Выполненные задачи';
+  allButtons.children[1].textContent = 'Активные задачи';
+};
+
 function rendering() {
   const filteredTasks = typeBtnSwitch();
   const arrayTaskNew = filteredTasks.slice(((curPage - 1) * VIEW_COUNT), (curPage * VIEW_COUNT));
@@ -89,7 +110,7 @@ function rendering() {
 }
 
 const addTask = () => {
-  fetch(URL, {
+  fetch(URL_BACK, {
     method: 'POST',
     headers: {
       'Content-type': 'application/json; charset=UTF-8',
@@ -101,33 +122,17 @@ const addTask = () => {
     }),
   })
     .then((response) => {
-      if (response.ok) return response.json();
+      if (response.ok) {
+        return response.json();
+      }
       throw new Error('Ошибка при добавлении задачи');
     })
-    .then((data) => console.log(data))
+    .then((addedTask) => {
+      arrayTask.push(addedTask);
+      mainInput.value = '';
+      rendering();
+    })
     .catch((error) => console.log(error.message));
-};
-
-const buttonRefresh = () => {
-  allButtons.children[0].setAttribute('class', PRIMARY_STYLE);
-  allButtons.children[1].setAttribute('class', PRIMARY_STYLE);
-  allButtons.children[2].setAttribute('class', PRIMARY_STYLE);
-  if (filterType === 'allTasks') {
-    allButtons.children[0].setAttribute('class', DANGER_STYLE);
-  }
-  if (filterType === 'activeTasks') {
-    allButtons.children[1].setAttribute('class', DANGER_STYLE);
-  }
-  if (filterType === 'completedTasks') {
-    allButtons.children[2].setAttribute('class', DANGER_STYLE);
-  }
-};
-
-const styleButtonRender = () => {
-  buttonRefresh();
-  allButtons.children[0].textContent = 'Все задачи';
-  allButtons.children[2].textContent = 'Выполненные задачи';
-  allButtons.children[1].textContent = 'Активные задачи';
 };
 
 const addByEnter = (e) => {
@@ -181,30 +186,45 @@ const saveOrExit = (event) => {
 };
 
 const fullCheckbox = () => {
-  arrayTask.forEach((element) => {
-    element.isChecked = globalCheckbox.checked;
-  });
-  rendering();
-};
-
-const deleteCompleteTasks = () => {
-  const filteredTasks = arrayTask.filter((element) => element.isChecked === false);
-  arrayTask = filteredTasks;
-
-  fetch(URL, {
-    method: 'DELETE',
+  fetch(URL_BACK, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    // body: JSON.stringify(arrayTask)
+    body: JSON.stringify({
+      isChecked: globalCheckbox.checked,
+    }),
   })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
-      return response.json();
+      return response;
     })
     .then(() => {
+      arrayTask.forEach((element) => {
+        element.isChecked = globalCheckbox.checked;
+      });
+      rendering();
+    })
+    .catch((error) => console.log(error.message));
+};
+
+const deleteFetchCompleteTasks = () => {
+  fetch(URL_BACK, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      return response;
+    })
+    .then(() => {
+      arrayTask = arrayTask.filter((element) => element.isChecked === false);
       rendering();
     })
     .catch((error) => {
@@ -228,8 +248,9 @@ const changePage = (event) => {
     rendering();
   }
 };
+
 function fetchAllTasksFromBD() {
-  fetch(URL)
+  fetch(URL_BACK)
     .then((response) => {
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -237,7 +258,7 @@ function fetchAllTasksFromBD() {
       return response.json();
     })
     .then((data) => {
-      console.log(data);
+      // console.log(data);
       allButtons.classList.add('btn-active');
       arrayTask = data;
       rendering();
@@ -254,6 +275,6 @@ mainInput.addEventListener('keypress', addByEnter);
 ulTask.addEventListener('click', editTask);
 ulTask.addEventListener('keydown', saveOrExit);
 ulTask.addEventListener('blur', saveChanges, true);
-allDeleteComplete.addEventListener('click', deleteCompleteTasks);
+allDeleteComplete.addEventListener('click', deleteFetchCompleteTasks);
 allButtons.addEventListener('click', changeFilterType);
 pgContainer.addEventListener('click', changePage);
