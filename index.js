@@ -1,10 +1,10 @@
 const BUTTON = 'BUTTON';
-const CHECKBOX = 'checkbox'
+const CHECKBOX = 'checkbox';
 const SPAN = 'SPAN';
 const DATA_ID = 'data-id';
 const READ_ONLY = 'readonly';
 const NONE = 'NONE';
-const ALL = 'allTasks';
+// const ALL = 'allTasks';
 const CLASS = 'class';
 const ID = 'id';
 const CHECKED = 'checked';
@@ -22,16 +22,18 @@ const globalCheckbox = document.getElementById('globalCheckbox');
 const allDeleteComplete = document.getElementById('allDeleteComplete');
 const allButtons = document.getElementById('allButtons');
 const pgContainer = document.getElementById('pageContainer');
+// eslint-disable-next-line no-redeclare
+const URL = 'http://localhost:3001/todos';
 let curPage = 1;
 let filterType = 'allTasks';
 let arrayTask = [];
 
-const goToNextPage = () => {
-  const countPage = Math.ceil(arrayTask.length / VIEW_COUNT);
-  if ((countPage) > (curPage)) {
-    curPage = countPage;
-  }
-};
+// const goToNextPage = () => {
+//   const countPage = Math.ceil(arrayTask.length / VIEW_COUNT);
+//   if ((countPage) > (curPage)) {
+//     curPage = countPage;
+//   }
+// };
 const typeBtnSwitch = () => {
   switch (filterType) {
     case 'activeTasks':
@@ -81,25 +83,29 @@ function rendering() {
   ulTask.innerHTML = htmlList;
   styleButtonRender();
   createPageButtons(filteredTasks.length);
-  globalCheckbox.checked = arrayTask.length !== 0 ?
-    arrayTask.every((item) => item.isChecked)
+  globalCheckbox.checked = arrayTask.length !== 0
+    ? arrayTask.every((item) => item.isChecked)
     : false;
 }
 
 const addTask = () => {
-  const onlyText = deleteSpace();
-  if (onlyText !== '') {
-    const Task = {
-      text: _.escape(onlyText),
-      id: Date.now(),
-      isChecked: false,
-    };
-    filterType = ALL;
-    arrayTask.push(Task);
-    goToNextPage();
-    rendering();
-    mainInput.value = '';
-  }
+  fetch(URL, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+    body: JSON.stringify({
+      text: _.escape(deleteSpace()),
+      // id: Date.now(),
+      // isChecked: false,
+    }),
+  })
+    .then((response) => {
+      if (response.ok) return response.json();
+      throw new Error('Ошибка при добавлении задачи');
+    })
+    .then((data) => console.log(data))
+    .catch((error) => console.log(error.message));
 };
 
 const buttonRefresh = () => {
@@ -119,9 +125,9 @@ const buttonRefresh = () => {
 
 const styleButtonRender = () => {
   buttonRefresh();
-  allButtons.children[0].textContent = `Все задачи`;
-  allButtons.children[2].textContent = `Выполненные задачи`;
-  allButtons.children[1].textContent = `Активные задачи`;
+  allButtons.children[0].textContent = 'Все задачи';
+  allButtons.children[2].textContent = 'Выполненные задачи';
+  allButtons.children[1].textContent = 'Активные задачи';
 };
 
 const addByEnter = (e) => {
@@ -135,6 +141,7 @@ const editTask = (e) => {
   const taskId = e.target.parentNode.getAttribute(DATA_ID);
   const searchByIndex = arrayTask.findIndex((obj) => obj.id === Number(taskId));
   if (e.target.tagName === BUTTON) {
+    // deleteCompleteTasks()
     arrayTask.splice(searchByIndex, 1);
     goToPrevPage();
     rendering();
@@ -148,7 +155,7 @@ const editTask = (e) => {
     e.target.removeAttribute(READ_ONLY);
     e.target.style.display = NONE;
     e.target.parentNode.children[2].hidden = false;
-    e.target.parentNode.children[2].focus()
+    e.target.parentNode.children[2].focus();
   }
 };
 
@@ -159,8 +166,7 @@ const saveChanges = (event) => {
     const currentTask = arrayTask.find((obj) => obj.id === Number(taskId));
     currentTask.text = event.target.parentNode.children[2].value;
     rendering();
-  }
-  else {
+  } else {
     rendering();
   }
 };
@@ -176,14 +182,34 @@ const saveOrExit = (event) => {
 
 const fullCheckbox = () => {
   arrayTask.forEach((element) => {
-    element.isChecked = globalCheckbox.checked
+    element.isChecked = globalCheckbox.checked;
   });
   rendering();
 };
 
 const deleteCompleteTasks = () => {
-  arrayTask = arrayTask.filter((element) => element.isChecked === false);
-  rendering();
+  const filteredTasks = arrayTask.filter((element) => element.isChecked === false);
+  arrayTask = filteredTasks;
+
+  fetch(URL, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    // body: JSON.stringify(arrayTask)
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(() => {
+      rendering();
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
 };
 
 const changeFilterType = (event) => {
@@ -202,7 +228,26 @@ const changePage = (event) => {
     rendering();
   }
 };
+function fetchAllTasksFromBD() {
+  fetch(URL)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log(data);
+      allButtons.classList.add('btn-active');
+      arrayTask = data;
+      rendering();
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+}
 
+window.onload = fetchAllTasksFromBD();
 btnTask.addEventListener('click', addTask);
 globalCheckbox.addEventListener('click', fullCheckbox);
 mainInput.addEventListener('keypress', addByEnter);
