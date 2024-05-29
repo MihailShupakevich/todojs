@@ -142,35 +142,64 @@ const addByEnter = (e) => {
   }
 };
 
+const redaxTask = (taskId, data) => {
+  fetch(`${URL_BACK}/${taskId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then((res) => res.json())
+    .then((newTask) => {
+      const needIndex = arrayTask.findIndex((obj) => obj.id === taskId);
+      arrayTask.splice(needIndex, 1, newTask);
+    })
+    .catch((error) => console.log(error));
+};
+const fetchDeleteTask = (taskId) => {
+  fetch(`${URL_BACK}/${taskId}`, {
+    method: 'DELETE',
+    // headers: {
+    //   'Content-Type': 'application/json',
+    // },
+
+  })
+    .then((response) => {
+      if (response.ok) {
+        const needIndex = arrayTask.findIndex((obj) => obj.id === taskId);
+        arrayTask.splice(needIndex, 1);
+        rendering();
+      } else throw new Error('123');
+    })
+    .catch((error) => console.log(error.message));
+};
+
 const editTask = (e) => {
   const taskId = e.target.parentNode.getAttribute(DATA_ID);
-  const searchByIndex = arrayTask.findIndex((obj) => obj.id === Number(taskId));
   if (e.target.tagName === BUTTON) {
-    // deleteCompleteTasks()
-    arrayTask.splice(searchByIndex, 1);
     goToPrevPage();
-    rendering();
+    fetchDeleteTask(taskId); // вставить функцию с фетчом для удаления 1 таски (сделать эту фукнцию)
   }
   if (e.target.type === CHECKBOX) {
-    arrayTask[searchByIndex].isChecked = e.target.checked;
-    goToPrevPage();
-    rendering();
+    redaxTask(taskId, { isChecked: e.target.checked });
   }
   if ((e.target.tagName === SPAN) && (e.detail === DBCLICK_NODE)) {
     e.target.removeAttribute(READ_ONLY);
     e.target.style.display = NONE;
     e.target.parentNode.children[2].hidden = false;
     e.target.parentNode.children[2].focus();
+    console.log('222');
   }
 };
 
 const saveChanges = (event) => {
-  event.target.parentNode.children[2].value = _.escape(event.target.parentNode.children[2].value.replace(/\s+/g, ' ').trim());
-  if (event.target.parentNode.children[2].value !== '') {
+  //blur;
+  console.log('fgerogjepj');
+  const pureText = _.escape(event.target.parentNode.children[2].value.replace(/\s+/g, ' ').trim());
+  if (pureText !== '') {
     const taskId = event.target.parentNode.getAttribute(DATA_ID);
-    const currentTask = arrayTask.find((obj) => obj.id === Number(taskId));
-    currentTask.text = event.target.parentNode.children[2].value;
-    rendering();
+    redaxTask(taskId, { text: pureText });
   } else {
     rendering();
   }
