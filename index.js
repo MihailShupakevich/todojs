@@ -33,6 +33,7 @@ let arrayTask = [];
 //     curPage = countPage;
 //   }
 // };
+
 const typeBtnSwitch = () => {
   switch (filterType) {
     case 'activeTasks':
@@ -109,6 +110,24 @@ function rendering() {
     : false;
 }
 
+function fetchAllTasksFromBD() {
+  fetch(URL_BACK)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then((data) => {
+      allButtons.classList.add('btn-active');
+      arrayTask = data;
+      rendering();
+    })
+    .catch((error) => {
+      throw new Error(`HTTP error ${error.status}`);
+    });
+}
+
 const addTask = () => {
   fetch(URL_BACK, {
     method: 'POST',
@@ -155,31 +174,26 @@ const redaxTask = (taskId, data) => {
       const needIndex = arrayTask.findIndex((obj) => obj.id === taskId);
       arrayTask.splice(needIndex, 1, newTask);
     })
-    .catch((error) => console.log(error));
+    .catch((error) => console.log(error.message));
 };
 const fetchDeleteTask = (taskId) => {
   fetch(`${URL_BACK}/${taskId}`, {
     method: 'DELETE',
-    // headers: {
-    //   'Content-Type': 'application/json',
-    // },
-
   })
     .then((response) => {
       if (response.ok) {
         const needIndex = arrayTask.findIndex((obj) => obj.id === taskId);
         arrayTask.splice(needIndex, 1);
         rendering();
-      } else throw new Error('123');
-    })
-    .catch((error) => console.log(error.message));
+      } else throw new Error('HTTP error: ');
+    });
 };
 
 const editTask = (e) => {
   const taskId = e.target.parentNode.getAttribute(DATA_ID);
   if (e.target.tagName === BUTTON) {
     goToPrevPage();
-    fetchDeleteTask(taskId); // вставить функцию с фетчом для удаления 1 таски (сделать эту фукнцию)
+    fetchDeleteTask(taskId);
   }
   if (e.target.type === CHECKBOX) {
     redaxTask(taskId, { isChecked: e.target.checked });
@@ -189,19 +203,19 @@ const editTask = (e) => {
     e.target.style.display = NONE;
     e.target.parentNode.children[2].hidden = false;
     e.target.parentNode.children[2].focus();
-    console.log('222');
   }
 };
 
 const saveChanges = (event) => {
-  //blur;
-  console.log('fgerogjepj');
-  const pureText = _.escape(event.target.parentNode.children[2].value.replace(/\s+/g, ' ').trim());
-  if (pureText !== '') {
-    const taskId = event.target.parentNode.getAttribute(DATA_ID);
-    redaxTask(taskId, { text: pureText });
-  } else {
-    rendering();
+  if (event.target.tagName === 'INPUT' && event.target.type === 'text') {
+    const pureText = _.escape(event.target.parentNode.children[2].value.replace(/\s+/g, ' ').trim());
+    if (pureText !== '') {
+      const taskId = event.target.parentNode.getAttribute(DATA_ID);
+      redaxTask(taskId, { text: pureText });
+      fetchAllTasksFromBD();
+    } else {
+      rendering();
+    }
   }
 };
 
@@ -257,7 +271,7 @@ const deleteFetchCompleteTasks = () => {
       rendering();
     })
     .catch((error) => {
-      console.error('Error:', error);
+      throw new Error(`HTTP error ${error.status}`);
     });
 };
 
@@ -277,25 +291,6 @@ const changePage = (event) => {
     rendering();
   }
 };
-
-function fetchAllTasksFromBD() {
-  fetch(URL_BACK)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then((data) => {
-      // console.log(data);
-      allButtons.classList.add('btn-active');
-      arrayTask = data;
-      rendering();
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-}
 
 window.onload = fetchAllTasksFromBD();
 btnTask.addEventListener('click', addTask);
