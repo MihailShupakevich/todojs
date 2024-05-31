@@ -27,12 +27,12 @@ let curPage = 1;
 let filterType = 'allTasks';
 let arrayTask = [];
 
-// const goToNextPage = () => {
-//   const countPage = Math.ceil(arrayTask.length / VIEW_COUNT);
-//   if ((countPage) > (curPage)) {
-//     curPage = countPage;
-//   }
-// };
+const goToNextPage = () => {
+  const countPage = Math.ceil(arrayTask.length / VIEW_COUNT);
+  if ((countPage) > (curPage)) {
+    curPage = countPage;
+  }
+};
 
 const typeBtnSwitch = () => {
   switch (filterType) {
@@ -136,8 +136,6 @@ const addTask = () => {
     },
     body: JSON.stringify({
       text: _.escape(deleteSpace()),
-      // id: Date.now(),
-      // isChecked: false,
     }),
   })
     .then((response) => {
@@ -149,6 +147,7 @@ const addTask = () => {
     .then((addedTask) => {
       arrayTask.push(addedTask);
       mainInput.value = '';
+      goToNextPage();
       rendering();
     })
     .catch((error) => console.log(error.message));
