@@ -22,10 +22,18 @@ const globalCheckbox = document.getElementById('globalCheckbox');
 const allDeleteComplete = document.getElementById('allDeleteComplete');
 const allButtons = document.getElementById('allButtons');
 const pgContainer = document.getElementById('pageContainer');
-const URL_BACK = 'http://localhost:3001/todos';
+const errorBlock = document.getElementById('errorBlock');
+const URL_BACK = 'https://api.t1.academy.dunice-testing.com/todos';
+const TIME_OUT = 2000;
 let curPage = 1;
 let filterType = 'allTasks';
 let arrayTask = [];
+
+const errorBlockFn = (errorText) => {
+  errorBlock.textContent = errorText;
+  errorBlock.classList.add('visible');
+  setTimeout(() => errorBlock.classList.remove('visible'), TIME_OUT);
+};
 
 const goToNextPage = () => {
   const countPage = Math.ceil(arrayTask.length / VIEW_COUNT);
@@ -123,9 +131,7 @@ function fetchAllTasksFromBD() {
       arrayTask = data;
       rendering();
     })
-    .catch((error) => {
-      throw new Error(`HTTP error ${error.status}`);
-    });
+    .catch((error) => errorBlockFn(error));
 }
 
 const addTask = () => {
@@ -150,7 +156,7 @@ const addTask = () => {
       goToNextPage();
       rendering();
     })
-    .catch((error) => console.log(error.message));
+    .catch((error) => errorBlockFn(error));
 };
 
 const addByEnter = (e) => {
@@ -173,7 +179,7 @@ const redaxTask = (taskId, data) => {
       const needIndex = arrayTask.findIndex((obj) => obj.id === taskId);
       arrayTask.splice(needIndex, 1, newTask);
     })
-    .catch((error) => console.log(error.message));
+    .catch((error) => errorBlockFn(error));
 };
 const fetchDeleteTask = (taskId) => {
   fetch(`${URL_BACK}/${taskId}`, {
@@ -183,6 +189,7 @@ const fetchDeleteTask = (taskId) => {
       if (response.ok) {
         const needIndex = arrayTask.findIndex((obj) => obj.id === taskId);
         arrayTask.splice(needIndex, 1);
+        fetchAllTasksFromBD();
         rendering();
       } else throw new Error('HTTP error: ');
     });
@@ -249,7 +256,7 @@ const fullCheckbox = () => {
       });
       rendering();
     })
-    .catch((error) => console.log(error.message));
+    .catch((error) => errorBlockFn(error));
 };
 
 const deleteFetchCompleteTasks = () => {
@@ -269,9 +276,7 @@ const deleteFetchCompleteTasks = () => {
       arrayTask = arrayTask.filter((element) => element.isChecked === false);
       rendering();
     })
-    .catch((error) => {
-      throw new Error(`HTTP error ${error.status}`);
-    });
+    .catch((error) => errorBlockFn(error));
 };
 
 const changeFilterType = (event) => {

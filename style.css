@@ -18,4 +18,7 @@ body{
 .add_button{
   background-color: rgb(189, 68, 13);
 }
+.visible {
+  display: block;
+}
 
